@@ -1,0 +1,14 @@
+name: RandomTP
+version: 1.0
+main: me.becja10.RandomTP.Main
+depend: [GriefPrevention]
+description: Randomly teleports players to unclaimed areas on the map
+commands:
+  tpr:
+    description: Teleports you to a random, unclaimed location
+    usage: /<command> [player]
+    aliases: [tprand, randomtp, tprandom]
+  tprs:
+    description: Sets the spawn point to start from (default is world spawn)
+    usage: /<command>
+    aliases: [tprspawn, randomtpspawn]
