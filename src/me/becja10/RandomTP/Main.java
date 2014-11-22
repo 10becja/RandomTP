@@ -155,7 +155,10 @@ public class Main extends JavaPlugin implements Listener{
 			count++; //make sure that it stops at some point...
 		}
 		if(foundSpot) //if we found a spot and didn't run out of spinning
-			return (foundSpot & player.teleport(possible));
+		{
+			world.loadChunk(possible.getChunk()); //load the chunk so that the player doesn't die in the void.
+			return player.teleport(possible);
+		}
 		return false;
 	}
 	
