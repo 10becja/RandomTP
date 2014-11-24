@@ -8,7 +8,7 @@
 # http://dev.bukkit.org/bukkit-plugins/grief-prevention/
 
 # Developed by 10becja
-# check us out at play.minecraft.dk
+# Check us out at play.minecraft.dk
 #----------------------------------#
 
 
@@ -20,6 +20,5 @@ Border: -1
 # The Spawn point to check from. Set to "reset" to have the plugin use the world's spawn
 Spawn: reset
  
-
 # World to check for first join (prevents random teleportation first time in nether/end, or other worlds)
 World: world  
