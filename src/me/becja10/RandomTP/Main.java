@@ -133,6 +133,8 @@ public class Main extends JavaPlugin implements Listener{
 	private boolean randomTeleport(Player player, World world)
 	{
 		//just as sanity check, in case for some reason my logic breaks
+		if(spawn == null)
+			spawn = player.getLocation();
 		Location possible = spawn;
 		
 		//how far away the can be teleported to
