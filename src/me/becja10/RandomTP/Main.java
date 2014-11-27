@@ -96,6 +96,13 @@ public class Main extends JavaPlugin implements Listener{
 				FileManager.savePlayers();
 				//do the teleport
 				doTeleport(p,w);
+				p.performCommand("sethome");
+				p.sendMessage(ChatColor.RED + "" + ChatColor.BOLD + "~~~~ATTENTION~~~");
+				p.sendMessage(ChatColor.RED + "" + ChatColor.BOLD + "~~~~ATTENTION~~~");
+				p.sendMessage(ChatColor.RED + "" + ChatColor.BOLD + "~~~~ATTENTION~~~");
+				p.sendMessage(ChatColor.GREEN + "ALWAYS KEEP AT LEAST ONE SETHOME IN THIS WORLD");
+				p.sendMessage(ChatColor.GREEN + "if you don't, you'll have to have another player teleport you back");
+				p.sendMessage(ChatColor.GREEN + "use /plotme home or /spawn to get back to shop world");
 			}
 		}
 	}
