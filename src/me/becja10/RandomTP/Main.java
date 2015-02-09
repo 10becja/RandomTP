@@ -146,6 +146,10 @@ public class Main extends JavaPlugin implements Listener{
 			FileManager.getPlayers().set(w.getName()+"."+id+".y", p.getLocation().getY());
 			FileManager.getPlayers().set(w.getName()+"."+id+".z", p.getLocation().getZ());
 			FileManager.savePlayers();
+			
+			//set this as their bed spawn location (for other plugins without having to hook)
+			if(getConfig().getBoolean("Bed"))
+				p.setBedSpawnLocation(p.getLocation(), true);
 		}
 		else
 		{
