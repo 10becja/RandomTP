@@ -16,6 +16,7 @@ import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.event.player.PlayerChangedWorldEvent;
+import org.bukkit.event.player.PlayerJoinEvent;
 import org.bukkit.plugin.PluginDescriptionFile;
 import org.bukkit.plugin.java.JavaPlugin;
 
@@ -72,15 +73,31 @@ public class Main extends JavaPlugin implements Listener{
     	}    
 	}
 	
+	
+	
 	/*
 	 * If the player is joining for the first time, randomly teleport them somewhere
 	 */
+	@EventHandler
+	public void onJoin(PlayerJoinEvent e)
+	{
+		if(!gotWorld) return;
+		Player p = e.getPlayer();
+		doCheck(p);
+	}
 	@EventHandler
 	public void onChangeWorld(PlayerChangedWorldEvent e)
 	{
 		//make sure we have a world
 		if(!gotWorld) return;
 		Player p = e.getPlayer();
+		doCheck(p);
+
+	}
+	
+	//code to run to check if should random tp
+	private void doCheck(Player p)
+	{
 		World w = p.getWorld();
 		String id = p.getUniqueId().toString();
 				
@@ -90,19 +107,8 @@ public class Main extends JavaPlugin implements Listener{
 			//check to see if the player has joined this world before
 			if (!FileManager.getPlayers().contains(w.getName()+"."+id)) 
 			{
-				//    world:
-				//      UUID: name
-				FileManager.getPlayers().set(w.getName()+"."+id, p.getName());
-				FileManager.savePlayers();
 				//do the teleport
 				doTeleport(p,w);
-				p.performCommand("sethome");
-				p.sendMessage(ChatColor.RED + "" + ChatColor.BOLD + "~~~~ATTENTION~~~");
-				p.sendMessage(ChatColor.RED + "" + ChatColor.BOLD + "~~~~ATTENTION~~~");
-				p.sendMessage(ChatColor.RED + "" + ChatColor.BOLD + "~~~~ATTENTION~~~");
-				p.sendMessage(ChatColor.GREEN + "ALWAYS KEEP AT LEAST ONE SETHOME IN THIS WORLD");
-				p.sendMessage(ChatColor.GREEN + "if you don't, you'll have to have another player teleport you back");
-				p.sendMessage(ChatColor.GREEN + "use /plotme home or /spawn to get back to shop world");
 			}
 		}
 	}
@@ -126,6 +132,20 @@ public class Main extends JavaPlugin implements Listener{
 		{
 			this.logger.info("[RandomTP] Successfully teleported "+p.getName());
 			p.sendMessage(ChatColor.BLUE + "[RandomTP]"+ChatColor.GREEN+" You have been randomly teleported!");
+			String id = p.getUniqueId().toString();
+			
+			//Save the information
+			
+			//    world:
+			//      UUID: name
+			//        x:
+			//        y:
+			//        z:
+			FileManager.getPlayers().set(w.getName()+"."+id+".name", p.getName());
+			FileManager.getPlayers().set(w.getName()+"."+id+".x", p.getLocation().getX());
+			FileManager.getPlayers().set(w.getName()+"."+id+".y", p.getLocation().getY());
+			FileManager.getPlayers().set(w.getName()+"."+id+".z", p.getLocation().getZ());
+			FileManager.savePlayers();
 		}
 		else
 		{
@@ -207,8 +227,35 @@ public class Main extends JavaPlugin implements Listener{
 	@SuppressWarnings("deprecation")
 	public boolean onCommand(CommandSender sender, Command cmd, String commandLabel, String[] args)
 	{
+		//TPRB
+		if(cmd.getName().equalsIgnoreCase("tprb"))
+		{
+			if (!(sender instanceof Player))
+				sender.sendMessage("This command can only be run by a player.");
+			else
+			{
+				Player p = (Player) sender;
+				if(!(p.hasPermission("randomtp.back")))
+					p.sendMessage(ChatColor.DARK_RED+"You do not have permission to use this command!");
+				else
+				{
+					String id = p.getUniqueId().toString();
+					//get the stored location
+					World w = world;
+					double x = FileManager.getPlayers().getDouble(w.getName()+"."+id+".x");
+					double y = FileManager.getPlayers().getDouble(w.getName()+"."+id+".y");
+					double z = FileManager.getPlayers().getDouble(w.getName()+"."+id+".z");
+					
+					Location back = new Location(w, x, y, z);
+					p.teleport(back);
+					p.sendMessage(ChatColor.GOLD+"You've been sent back");
+				}
+			}
+			return true;
+		}
+		
 		//TPR
-		if(cmd.getName().equalsIgnoreCase("tpr"))
+		else if(cmd.getName().equalsIgnoreCase("tpr"))
 		{
 			boolean isPlayer = sender instanceof Player;
 			switch (args.length)
