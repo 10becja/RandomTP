@@ -236,7 +236,7 @@ public class Main extends JavaPlugin implements Listener{
 		{
 			if (!(sender instanceof Player))
 				sender.sendMessage("This command can only be run by a player.");
-			else
+			else 
 			{
 				Player p = (Player) sender;
 				if(!(p.hasPermission("randomtp.back")))
@@ -244,15 +244,21 @@ public class Main extends JavaPlugin implements Listener{
 				else
 				{
 					String id = p.getUniqueId().toString();
-					//get the stored location
-					World w = world;
-					double x = FileManager.getPlayers().getDouble(w.getName()+"."+id+".x");
-					double y = FileManager.getPlayers().getDouble(w.getName()+"."+id+".y");
-					double z = FileManager.getPlayers().getDouble(w.getName()+"."+id+".z");
-					
-					Location back = new Location(w, x, y, z);
-					p.teleport(back);
-					p.sendMessage(ChatColor.GOLD+"You've been sent back");
+					//make sure they have one
+					if (FileManager.getPlayers().contains(world.getName()+"."+id+".x")) 
+					{
+						//get the stored location
+						World w = world;
+						double x = FileManager.getPlayers().getDouble(w.getName()+"."+id+".x");
+						double y = FileManager.getPlayers().getDouble(w.getName()+"."+id+".y");
+						double z = FileManager.getPlayers().getDouble(w.getName()+"."+id+".z");
+						
+						Location back = new Location(w, x, y, z);
+						p.teleport(back);
+						p.sendMessage(ChatColor.GOLD+"You've been sent back");
+					}
+					else
+						p.sendMessage(ChatColor.RED+"No origin available");
 				}
 			}
 			return true;
