@@ -25,3 +25,7 @@ World: world
 
 # Set bed spawn location on TP
 Bed: true
+
+# If your server supports the /sethome command, you can set this to true to force the player to /sethome 
+# after they are tp'd (usefule for one time random tp's)
+Sethome: true

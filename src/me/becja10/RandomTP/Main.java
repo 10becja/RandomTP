@@ -150,6 +150,9 @@ public class Main extends JavaPlugin implements Listener{
 			//set this as their bed spawn location (for other plugins without having to hook)
 			if(getConfig().getBoolean("Bed"))
 				p.setBedSpawnLocation(p.getLocation(), true);
+			//for servers with /sethome
+			if(getConfig().getBoolean("Sethome"))
+				p.performCommand("sethome");
 		}
 		else
 		{

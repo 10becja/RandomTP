@@ -1,5 +1,5 @@
 name: RandomTP
-version: 2.1
+version: 2.2
 main: me.becja10.RandomTP.Main
 softdepend: [GriefPrevention]
 description: Randomly teleports players to unclaimed areas on the map
