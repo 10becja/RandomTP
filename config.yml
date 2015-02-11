@@ -21,7 +21,7 @@ Border: -1
 Spawn: reset
  
 # World to check for first join (prevents random teleportation first time in nether/end, or other worlds)
-World: world  
+World: someworldnamethatwontexist  
 
 # Set bed spawn location on TP
 Bed: true
