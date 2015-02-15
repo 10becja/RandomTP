@@ -23,9 +23,9 @@ Spawn: reset
 # World to check for first join (prevents random teleportation first time in nether/end, or other worlds)
 World: someworldnamethatwontexist  
 
-# Set bed spawn location on TP
+# Set bed spawn location on random TP
 Bed: true
 
 # If your server supports the /sethome command, you can set this to true to force the player to /sethome 
-# after they are tp'd (usefule for one time random tp's)
+# after they are tp'd (useful for one time random tp's)
 Sethome: true

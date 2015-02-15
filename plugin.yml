@@ -7,7 +7,7 @@ commands:
   tpr:
     description: Teleports you to a random, unclaimed location
     usage: /<command> [player]
-    aliases: [tprand, randomtp, tprandom]
+    aliases: [tprrand, randomtp, tprrandom]
   tprs:
     description: Sets the spawn point to start from (default is world spawn)
     usage: /<command>

@@ -96,9 +96,9 @@ public class Main extends JavaPlugin implements Listener{
 	}
 	
 	//code to run to check if should random tp
-	private void doCheck(Player p)
+	private void doCheck(final Player p)
 	{
-		World w = p.getWorld();
+		final World w = p.getWorld();
 		String id = p.getUniqueId().toString();
 				
 		//see if we care about this world
@@ -107,8 +107,20 @@ public class Main extends JavaPlugin implements Listener{
 			//check to see if the player has joined this world before
 			if (!FileManager.getPlayers().contains(w.getName()+"."+id)) 
 			{
-				//do the teleport
-				doTeleport(p,w);
+				//schedule the teleport to launch after ~a second. This way if they are joining for the first time
+				//they are foreced to spawn THEN teleported.
+				Bukkit.getScheduler().scheduleSyncDelayedTask(plugin, new Runnable()
+				{public void run()
+					{
+						//make sure they are still in the right world. can happen if the world players
+						//spawn in is not the same as the world in server.properties, and players can be TP'd
+						//without ever actually joining that first world
+						if(!p.getWorld().equals(world))
+							return;
+						doTeleport(p,w);
+					}
+				}
+				, 20L);
 			}
 		}
 	}
