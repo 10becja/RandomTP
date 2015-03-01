@@ -1,5 +1,7 @@
 package me.becja10.RandomTP;
 
+import java.io.File;
+import java.io.IOException;
 import java.util.Random;
 import java.util.logging.Logger;
 
@@ -12,6 +14,8 @@ import org.bukkit.Location;
 import org.bukkit.World;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandSender;
+import org.bukkit.configuration.file.FileConfiguration;
+import org.bukkit.configuration.file.YamlConfiguration;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
@@ -30,11 +34,52 @@ public class Main extends JavaPlugin implements Listener{
 	
 	private static Location spawn;
 	private static World world;
+	private boolean hasGP;
 	
+	//config
+	public int config_border;							//How far out to check for teleport. Assumes set from spawn location
+	public String config_world;							//World that players will be rTPd upon joining
+	public int config_startX;							//where to start the search from
+	public int config_startY;
+	public int config_startZ;
+	public boolean config_setBed;						//Whether or not to set the bed location
+	public boolean config_setHome;						//Whether or not to run /sethome
+	public boolean config_checkClaims;					//Check for claims or not
+	
+	private String configPath = plugin.getDataFolder().getAbsolutePath() + File.separator + "config.yml";
+	private FileConfiguration config = YamlConfiguration.loadConfiguration(new File(configPath));
+	private FileConfiguration outConfig = new YamlConfiguration();
+	
+	
+	private void loadConfig()
+	{		
+		//get stored values, or defaults
+		config_border = config.getInt("border", -1);
+		config_world  = config.getString("world", "someworldthatwontexist");
+		config_startX = config.getInt("start.x", 0);
+		config_startY = config.getInt("start.y", 0);
+		config_startZ = config.getInt("start.z", 0);
+		config_setBed = config.getBoolean("bed", true);
+		config_setHome = config.getBoolean("sethome", true);
+		config_checkClaims = config.getBoolean("claims", hasGP);
+		
+		//store them in output.
+		outConfig.set("border", config_border);
+		outConfig.set("world", config_world);
+		outConfig.set("start.x", config_startX);
+		outConfig.set("start.y", config_startY);
+		outConfig.set("start.z", config_startZ);
+		outConfig.set("bed", config_setBed);
+		outConfig.set("setHome", config_setHome);
+		outConfig.set("claims", config_checkClaims);
+		save();
+	}
+
 	@Override
 	public void onDisable(){
 		PluginDescriptionFile pdfFile = this.getDescription();
 		this.logger.info(pdfFile.getName() + " Has Been Disabled!");
+		save();
 	}
 	
 	@Override
@@ -46,11 +91,16 @@ public class Main extends JavaPlugin implements Listener{
 		gen = new Random();
 		gen.setSeed(System.currentTimeMillis());
 		
+		hasGP = getServer().getPluginManager().getPlugin("GriefPrevention") != null;
+		if(!hasGP)
+			this.logger.info(pdfFile.getName() + " GriefPrevention not detected! Will not check for claims.");
+
+		
 	    //Save the files
-	    saveDefaultConfig(); //fail silently if config already exists
+		loadConfig();
 	    FileManager.saveDefaultPlayers();
 	    
-	    world = Bukkit.getWorld(plugin.getConfig().getString("World"));
+	    world = Bukkit.getWorld(config_world);
 	    //make sure a valid world is loaded
 	    if(world == null)
 	    {
@@ -61,15 +111,10 @@ public class Main extends JavaPlugin implements Listener{
 	    else
     	{
 	    	//it hasn't been configured yet
-	    	if(plugin.getConfig().getString("Spawn").equalsIgnoreCase("reset"))
-	    	{
+	    	if(config_startX == 0 && config_startY == 0 && config_startZ == 0)
 	    		setSpawn(world.getSpawnLocation());
-	    		plugin.getConfig().set("Spawn", null);
-	    	}
 	    	else
-	    		spawn = new Location(world, plugin.getConfig().getInt("Spawn.x"),
-	    									plugin.getConfig().getInt("Spawn.y"),
-	    									plugin.getConfig().getInt("Spawn.z"));
+	    		spawn = new Location(world, config_startX, config_startY, config_startZ);
     	}    
 	}
 	
@@ -160,10 +205,10 @@ public class Main extends JavaPlugin implements Listener{
 			FileManager.savePlayers();
 			
 			//set this as their bed spawn location (for other plugins without having to hook)
-			if(getConfig().getBoolean("Bed"))
+			if(config_setBed)
 				p.setBedSpawnLocation(p.getLocation(), true);
 			//for servers with /sethome
-			if(getConfig().getBoolean("Sethome"))
+			if(config_setHome)
 				p.performCommand("sethome");
 		}
 		else
@@ -184,7 +229,7 @@ public class Main extends JavaPlugin implements Listener{
 		Location possible = spawn;
 		
 		//how far away the can be teleported to
-		int border = plugin.getConfig().getInt("Border");
+		int border = config_border;
 		if(border == -1)
 			border = MAX_BORDER;
 		
@@ -215,6 +260,8 @@ public class Main extends JavaPlugin implements Listener{
 	 */
 	private boolean checkLocation(Location l)
 	{
+		if(!hasGP || !config_checkClaims) return true;
+		
 		Claim claim = GriefPrevention.instance.dataStore.getClaimAt(l, true, null);
 		
 		//if we've landed in a claim, that's bad
@@ -243,11 +290,23 @@ public class Main extends JavaPlugin implements Listener{
 	/*
 	 * To manually teleport someone randomly
 	 */
-	@SuppressWarnings("deprecation")
 	public boolean onCommand(CommandSender sender, Command cmd, String commandLabel, String[] args)
 	{
+		//tprreload
+		if(cmd.getName().equalsIgnoreCase("tprreload"))
+		{
+			//if is player, and doesn't have permission
+			if((sender instanceof Player) && !(sender.hasPermission("randomtp.reload")))
+					sender.sendMessage(ChatColor.DARK_RED+"No permission.");
+			else
+			{
+				FileManager.reloadPlayers();
+				loadConfig();
+			}
+		}
+		
 		//TPRB
-		if(cmd.getName().equalsIgnoreCase("tprb"))
+		else if(cmd.getName().equalsIgnoreCase("tprb"))
 		{
 			if (!(sender instanceof Player))
 				sender.sendMessage("This command can only be run by a player.");
@@ -361,15 +420,27 @@ public class Main extends JavaPlugin implements Listener{
 	 */
 	private void setSpawn(Location l)
 	{	
-		plugin.getConfig().set("Spawn.x", l.getBlockX());
-		plugin.getConfig().set("Spawn.y", l.getBlockY());
-		plugin.getConfig().set("Spawn.z", l.getBlockZ());
+		outConfig.set("start.x", l.getBlockX());
+		outConfig.set("start.y", l.getBlockY());
+		outConfig.set("start.z", l.getBlockZ());
 		spawn = l;
-		plugin.saveConfig();
+		save();
 	}
 	
 	public static Main getInstance()
 	{
 		return plugin;
+	}
+	
+	private void save()
+	{
+        try
+        {
+            outConfig.save(configPath);
+        }
+        catch(IOException exception)
+        {
+            logger.info("Unable to write to the configuration file at \"" + configPath + "\"");
+        }		
 	}
 }
