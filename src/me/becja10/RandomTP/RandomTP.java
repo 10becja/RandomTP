@@ -24,9 +24,9 @@ import org.bukkit.event.player.PlayerJoinEvent;
 import org.bukkit.plugin.PluginDescriptionFile;
 import org.bukkit.plugin.java.JavaPlugin;
 
-public class Main extends JavaPlugin implements Listener{
+public class RandomTP extends JavaPlugin implements Listener{
 	public final Logger logger = Logger.getLogger("Minecraft");
-	private static Main plugin;
+	private static RandomTP plugin;
 	private static final int MAX_BORDER = 500000;
 	private static Random gen;
 	private static final int SPINNER = 100;
@@ -46,9 +46,9 @@ public class Main extends JavaPlugin implements Listener{
 	public boolean config_setHome;						//Whether or not to run /sethome
 	public boolean config_checkClaims;					//Check for claims or not
 	
-	private String configPath = plugin.getDataFolder().getAbsolutePath() + File.separator + "config.yml";
-	private FileConfiguration config = YamlConfiguration.loadConfiguration(new File(configPath));
-	private FileConfiguration outConfig = new YamlConfiguration();
+	private String configPath;
+	private FileConfiguration config;
+	private FileConfiguration outConfig;
 	
 	
 	private void loadConfig()
@@ -94,6 +94,10 @@ public class Main extends JavaPlugin implements Listener{
 		hasGP = getServer().getPluginManager().getPlugin("GriefPrevention") != null;
 		if(!hasGP)
 			this.logger.info(pdfFile.getName() + " GriefPrevention not detected! Will not check for claims.");
+		
+		configPath = plugin.getDataFolder().getAbsolutePath() + File.separator + "config.yml";
+		config = YamlConfiguration.loadConfiguration(new File(configPath));
+		outConfig = new YamlConfiguration();
 
 		
 	    //Save the files
@@ -427,7 +431,7 @@ public class Main extends JavaPlugin implements Listener{
 		save();
 	}
 	
-	public static Main getInstance()
+	public static RandomTP getInstance()
 	{
 		return plugin;
 	}
