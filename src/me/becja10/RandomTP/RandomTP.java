@@ -7,11 +7,14 @@ import java.util.logging.Logger;
 
 import me.ryanhamshire.GriefPrevention.Claim;
 import me.ryanhamshire.GriefPrevention.GriefPrevention;
+import net.minecraft.server.v1_8_R3.Material;
 
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
 import org.bukkit.Location;
 import org.bukkit.World;
+import org.bukkit.block.Biome;
+import org.bukkit.block.Block;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandSender;
 import org.bukkit.configuration.file.FileConfiguration;
@@ -29,7 +32,7 @@ public class RandomTP extends JavaPlugin implements Listener{
 	private static RandomTP plugin;
 	private static final int MAX_BORDER = 500000;
 	private static Random gen;
-	private static final int SPINNER = 100;
+	private static final int SPINNER = 5000;
 	private static boolean gotWorld = true;
 	
 	private static Location spawn;
@@ -264,6 +267,8 @@ public class RandomTP extends JavaPlugin implements Listener{
 	 */
 	private boolean checkLocation(Location l)
 	{
+		Block b = l.getBlock();
+		if(b.getType().equals(Material.WATER) && (b.getBiome().equals(Biome.OCEAN) || b.getBiome().equals(Biome.DEEP_OCEAN) )) return false;
 		if(!hasGP || !config_checkClaims) return true;
 		
 		Claim claim = GriefPrevention.instance.dataStore.getClaimAt(l, true, null);
