@@ -7,14 +7,15 @@ import java.util.logging.Logger;
 
 import me.ryanhamshire.GriefPrevention.Claim;
 import me.ryanhamshire.GriefPrevention.GriefPrevention;
-import net.minecraft.server.v1_8_R3.Material;
 
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
 import org.bukkit.Location;
+import org.bukkit.Material;
 import org.bukkit.World;
 import org.bukkit.block.Biome;
 import org.bukkit.block.Block;
+import org.bukkit.block.BlockFace;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandSender;
 import org.bukkit.configuration.file.FileConfiguration;
@@ -48,6 +49,7 @@ public class RandomTP extends JavaPlugin implements Listener{
 	public boolean config_setBed;						//Whether or not to set the bed location
 	public boolean config_setHome;						//Whether or not to run /sethome
 	public boolean config_checkClaims;					//Check for claims or not
+	public boolean config_teleportOnFirstJoinWorld;		//If new players should teleport upon joining the world
 	
 	private String configPath;
 	private FileConfiguration config;
@@ -56,15 +58,37 @@ public class RandomTP extends JavaPlugin implements Listener{
 	
 	private void loadConfig()
 	{		
+		configPath = plugin.getDataFolder().getAbsolutePath() + File.separator + "config.yml";
+		config = YamlConfiguration.loadConfiguration(new File(configPath));
+		outConfig = new YamlConfiguration();
+		
 		//get stored values, or defaults
 		config_border = config.getInt("border", -1);
-		config_world  = config.getString("world", "someworldthatwontexist");
+		config_world  = config.getString("world", "world");
 		config_startX = config.getInt("start.x", 0);
 		config_startY = config.getInt("start.y", 0);
 		config_startZ = config.getInt("start.z", 0);
 		config_setBed = config.getBoolean("bed", true);
 		config_setHome = config.getBoolean("sethome", true);
 		config_checkClaims = config.getBoolean("claims", hasGP);
+		config_teleportOnFirstJoinWorld = config.getBoolean("teleportOnFirstJoinWorld", false);
+		
+		
+	    world = Bukkit.getWorld(config_world);
+	    //make sure a valid world is loaded
+	    if(world == null)
+	    {
+			this.logger.info("[RandomTP] The world specified in RandomTP/config does not exist");
+			gotWorld = false;
+	    }
+	    else
+    	{
+	    	//it hasn't been configured yet
+	    	if(config_startX == 0 && config_startY == 0 && config_startZ == 0)
+	    		setSpawn(world.getSpawnLocation());
+	    	else
+	    		spawn = new Location(world, config_startX, config_startY, config_startZ);
+    	} 
 		
 		//store them in output.
 		outConfig.set("border", config_border);
@@ -97,32 +121,10 @@ public class RandomTP extends JavaPlugin implements Listener{
 		hasGP = getServer().getPluginManager().getPlugin("GriefPrevention") != null;
 		if(!hasGP)
 			this.logger.info(pdfFile.getName() + " GriefPrevention not detected! Will not check for claims.");
-		
-		configPath = plugin.getDataFolder().getAbsolutePath() + File.separator + "config.yml";
-		config = YamlConfiguration.loadConfiguration(new File(configPath));
-		outConfig = new YamlConfiguration();
-
-		
+				
 	    //Save the files
 		loadConfig();
-	    FileManager.saveDefaultPlayers();
-	    
-	    world = Bukkit.getWorld(config_world);
-	    //make sure a valid world is loaded
-	    if(world == null)
-	    {
-			this.logger.info(pdfFile.getName() + " The world specified in RandomTP/config does not exist");
-			this.logger.info(pdfFile.getName() + " Will not check for first time joiners to teleport");
-			gotWorld = false;
-	    }
-	    else
-    	{
-	    	//it hasn't been configured yet
-	    	if(config_startX == 0 && config_startY == 0 && config_startZ == 0)
-	    		setSpawn(world.getSpawnLocation());
-	    	else
-	    		spawn = new Location(world, config_startX, config_startY, config_startZ);
-    	}    
+	    FileManager.saveDefaultPlayers();   
 	}
 	
 	
@@ -150,6 +152,7 @@ public class RandomTP extends JavaPlugin implements Listener{
 	//code to run to check if should random tp
 	private void doCheck(final Player p)
 	{
+		if(!config_teleportOnFirstJoinWorld) return;
 		final World w = p.getWorld();
 		String id = p.getUniqueId().toString();
 				
@@ -160,7 +163,7 @@ public class RandomTP extends JavaPlugin implements Listener{
 			if (!FileManager.getPlayers().contains(w.getName()+"."+id)) 
 			{
 				//schedule the teleport to launch after ~a second. This way if they are joining for the first time
-				//they are foreced to spawn THEN teleported.
+				//they are forced to spawn THEN teleported.
 				Bukkit.getScheduler().scheduleSyncDelayedTask(plugin, new Runnable()
 				{public void run()
 					{
@@ -250,7 +253,7 @@ public class RandomTP extends JavaPlugin implements Listener{
 			int x = getRandomCoord(spawnX - border + 10, spawnX + border - 10);
 			int z = getRandomCoord(spawnZ - border + 10, spawnZ + border - 10);
 			int y = world.getHighestBlockYAt(x, z);
-			possible = new Location(world, x,y,z);
+			possible = new Location(world, x + 0.5, y, z + 0.5);
 			foundSpot = checkLocation(possible);
 			count++; //make sure that it stops at some point...
 		}
@@ -267,8 +270,8 @@ public class RandomTP extends JavaPlugin implements Listener{
 	 */
 	private boolean checkLocation(Location l)
 	{
-		Block b = l.getBlock();
-		if(b.getType().equals(Material.WATER) && (b.getBiome().equals(Biome.OCEAN) || b.getBiome().equals(Biome.DEEP_OCEAN) )) return false;
+		Block b = l.getBlock().getRelative(BlockFace.DOWN);
+		if(b.getType().equals(Material.STATIONARY_WATER) && (b.getBiome().equals(Biome.OCEAN) || b.getBiome().equals(Biome.DEEP_OCEAN) )) return false;
 		if(!hasGP || !config_checkClaims) return true;
 		
 		Claim claim = GriefPrevention.instance.dataStore.getClaimAt(l, true, null);
