@@ -99,6 +99,7 @@ public class RandomTP extends JavaPlugin implements Listener{
 		outConfig.set("bed", config_setBed);
 		outConfig.set("setHome", config_setHome);
 		outConfig.set("claims", config_checkClaims);
+		outConfig.set("teleportOnFirstJoinWorld", config_teleportOnFirstJoinWorld);
 		save();
 	}
 
