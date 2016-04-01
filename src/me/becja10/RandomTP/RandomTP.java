@@ -11,7 +11,6 @@ import me.ryanhamshire.GriefPrevention.GriefPrevention;
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
 import org.bukkit.Location;
-import org.bukkit.Material;
 import org.bukkit.World;
 import org.bukkit.block.Biome;
 import org.bukkit.block.Block;
@@ -29,8 +28,8 @@ import org.bukkit.plugin.PluginDescriptionFile;
 import org.bukkit.plugin.java.JavaPlugin;
 
 public class RandomTP extends JavaPlugin implements Listener{
-	public final Logger logger = Logger.getLogger("Minecraft");
-	private static RandomTP plugin;
+	public final static Logger logger = Logger.getLogger("Minecraft");
+	public static RandomTP plugin;
 	private static final int MAX_BORDER = 500000;
 	private static Random gen;
 	private static final int SPINNER = 5000;
@@ -50,6 +49,7 @@ public class RandomTP extends JavaPlugin implements Listener{
 	public boolean config_setHome;						//Whether or not to run /sethome
 	public boolean config_checkClaims;					//Check for claims or not
 	public boolean config_teleportOnFirstJoinWorld;		//If new players should teleport upon joining the world
+	public boolean config_oneRandomTeleport;
 	
 	private String configPath;
 	private FileConfiguration config;
@@ -72,13 +72,14 @@ public class RandomTP extends JavaPlugin implements Listener{
 		config_setHome = config.getBoolean("sethome", true);
 		config_checkClaims = config.getBoolean("claims", hasGP);
 		config_teleportOnFirstJoinWorld = config.getBoolean("teleportOnFirstJoinWorld", false);
+		config_oneRandomTeleport = config.getBoolean("teleportOnce", true);
 		
 		
 	    world = Bukkit.getWorld(config_world);
 	    //make sure a valid world is loaded
 	    if(world == null)
 	    {
-			this.logger.info("[RandomTP] The world specified in RandomTP/config does not exist");
+			logger.info("[RandomTP] The world specified in RandomTP/config does not exist");
 			gotWorld = false;
 	    }
 	    else
@@ -100,20 +101,21 @@ public class RandomTP extends JavaPlugin implements Listener{
 		outConfig.set("setHome", config_setHome);
 		outConfig.set("claims", config_checkClaims);
 		outConfig.set("teleportOnFirstJoinWorld", config_teleportOnFirstJoinWorld);
+		outConfig.set("teleportOnce", config_oneRandomTeleport);
 		save();
 	}
 
 	@Override
 	public void onDisable(){
 		PluginDescriptionFile pdfFile = this.getDescription();
-		this.logger.info(pdfFile.getName() + " Has Been Disabled!");
+		logger.info(pdfFile.getName() + " Has Been Disabled!");
 		save();
 	}
 	
 	@Override
 	public void onEnable(){
 		PluginDescriptionFile pdfFile = this.getDescription();
-		this.logger.info(pdfFile.getName() + " Version "+ pdfFile.getVersion() + " Has Been Enabled!");
+		logger.info(pdfFile.getName() + " Version "+ pdfFile.getVersion() + " Has Been Enabled!");
 	    getServer().getPluginManager().registerEvents(this, this); //register events
 		plugin = this;
 		gen = new Random();
@@ -121,11 +123,11 @@ public class RandomTP extends JavaPlugin implements Listener{
 		
 		hasGP = getServer().getPluginManager().getPlugin("GriefPrevention") != null;
 		if(!hasGP)
-			this.logger.info(pdfFile.getName() + " GriefPrevention not detected! Will not check for claims.");
+			logger.info(pdfFile.getName() + " GriefPrevention not detected! Will not check for claims.");
 				
 	    //Save the files
 		loadConfig();
-	    FileManager.saveDefaultPlayers();   
+	    PlayerManager.setUpManager();;   
 	}
 	
 	
@@ -161,7 +163,7 @@ public class RandomTP extends JavaPlugin implements Listener{
 		if (world.equals(w))
 		{
 			//check to see if the player has joined this world before
-			if (!FileManager.getPlayers().contains(w.getName()+"."+id)) 
+			if (!PlayerManager.getPlayers().contains(w.getName()+"."+id)) 
 			{
 				//schedule the teleport to launch after ~a second. This way if they are joining for the first time
 				//they are forced to spawn THEN teleported.
@@ -198,7 +200,7 @@ public class RandomTP extends JavaPlugin implements Listener{
 		//let people know what did/n't happen
 		if(successful)
 		{
-			this.logger.info("[RandomTP] Successfully teleported "+p.getName());
+			logger.info("[RandomTP] Successfully teleported "+p.getName());
 			p.sendMessage(ChatColor.BLUE + "[RandomTP]"+ChatColor.GREEN+" You have been randomly teleported!");
 			String id = p.getUniqueId().toString();
 			
@@ -209,11 +211,12 @@ public class RandomTP extends JavaPlugin implements Listener{
 			//        x:
 			//        y:
 			//        z:
-			FileManager.getPlayers().set(w.getName()+"."+id+".name", p.getName());
-			FileManager.getPlayers().set(w.getName()+"."+id+".x", p.getLocation().getX());
-			FileManager.getPlayers().set(w.getName()+"."+id+".y", p.getLocation().getY());
-			FileManager.getPlayers().set(w.getName()+"."+id+".z", p.getLocation().getZ());
-			FileManager.savePlayers();
+			PlayerManager.getPlayers().set(w.getName()+"."+id+".name", p.getName());
+			PlayerManager.getPlayers().set(w.getName()+"."+id+".x", p.getLocation().getX());
+			PlayerManager.getPlayers().set(w.getName()+"."+id+".y", p.getLocation().getY());
+			PlayerManager.getPlayers().set(w.getName()+"."+id+".z", p.getLocation().getZ());
+			PlayerManager.getPlayers().set(w.getName()+"."+id+".hasTeleported", true);
+			PlayerManager.savePlayers();
 			
 			//set this as their bed spawn location (for other plugins without having to hook)
 			if(config_setBed)
@@ -224,7 +227,7 @@ public class RandomTP extends JavaPlugin implements Listener{
 		}
 		else
 		{
-			this.logger.info("[RandomTP] Failed to teleport "+p.getName());
+			logger.info("[RandomTP] Failed to teleport "+p.getName());
 			p.sendMessage(ChatColor.BLUE + "[RandomTP]"+ChatColor.RED+" Random teleportation failed!");
 		}
 	}
@@ -272,7 +275,7 @@ public class RandomTP extends JavaPlugin implements Listener{
 	private boolean checkLocation(Location l)
 	{
 		Block b = l.getBlock().getRelative(BlockFace.DOWN);
-		if(b.getType().equals(Material.STATIONARY_WATER) && (b.getBiome().equals(Biome.OCEAN) || b.getBiome().equals(Biome.DEEP_OCEAN) )) return false;
+		if((b.getBiome().equals(Biome.OCEAN) || b.getBiome().equals(Biome.DEEP_OCEAN) )) return false;
 		if(!hasGP || !config_checkClaims) return true;
 		
 		Claim claim = GriefPrevention.instance.dataStore.getClaimAt(l, true, null);
@@ -313,7 +316,7 @@ public class RandomTP extends JavaPlugin implements Listener{
 					sender.sendMessage(ChatColor.DARK_RED+"No permission.");
 			else
 			{
-				FileManager.reloadPlayers();
+				PlayerManager.reloadPlayers();
 				loadConfig();
 			}
 		}
@@ -332,13 +335,13 @@ public class RandomTP extends JavaPlugin implements Listener{
 				{
 					String id = p.getUniqueId().toString();
 					//make sure they have one
-					if (FileManager.getPlayers().contains(world.getName()+"."+id+".x")) 
+					if (PlayerManager.getPlayers().contains(world.getName()+"."+id+".x")) 
 					{
 						//get the stored location
 						World w = world;
-						double x = FileManager.getPlayers().getDouble(w.getName()+"."+id+".x");
-						double y = FileManager.getPlayers().getDouble(w.getName()+"."+id+".y");
-						double z = FileManager.getPlayers().getDouble(w.getName()+"."+id+".z");
+						double x = PlayerManager.getPlayers().getDouble(w.getName()+"."+id+".x");
+						double y = PlayerManager.getPlayers().getDouble(w.getName()+"."+id+".y");
+						double z = PlayerManager.getPlayers().getDouble(w.getName()+"."+id+".z");
 						
 						Location back = new Location(w, x, y, z);
 						p.teleport(back);
@@ -349,6 +352,28 @@ public class RandomTP extends JavaPlugin implements Listener{
 				}
 			}
 			return true;
+		}
+		
+		else if(cmd.getName().equalsIgnoreCase("tprw"))
+		{
+			if(!(sender instanceof Player))
+				return true;
+			if(args.length != 1)
+				return false;
+			World world = Bukkit.getWorld(args[0]);
+			Player player = (Player) sender;
+			if(world == null)
+			{
+				sender.sendMessage(ChatColor.DARK_RED + "World not found.");
+				return true;
+			}
+			String path = world.getName() + "." + player.getUniqueId() + ".hasTeleported"; 
+			if(config_oneRandomTeleport && PlayerManager.getPlayers().getBoolean(path, false))
+			{
+				sender.sendMessage(ChatColor.RED + "You've already used your random teleport. Use /tprb to go to your location");
+				return true;
+			}
+			doTeleport(player, world);
 		}
 		
 		//TPR

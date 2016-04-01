@@ -1,5 +1,5 @@
 name: RandomTP
-version: 2.6
+version: 2.7
 main: me.becja10.RandomTP.RandomTP
 softdepend: [GriefPrevention]
 description: Randomly teleports players to unclaimed areas on the map
@@ -18,3 +18,6 @@ commands:
     aliases: [tprback, randomtpback]
   tprreload:
     description: reloads the config
+  tprw:
+    description: teleports you to the provided world. If no world is provided, works the same as tpr
+    usage: /<command> (world)
