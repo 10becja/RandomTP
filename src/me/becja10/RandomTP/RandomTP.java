@@ -374,6 +374,7 @@ public class RandomTP extends JavaPlugin implements Listener{
 				return true;
 			}
 			doTeleport(player, world);
+			return true;
 		}
 		
 		//TPR
