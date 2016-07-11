@@ -358,6 +358,11 @@ public class RandomTP extends JavaPlugin implements Listener{
 		{
 			if(!(sender instanceof Player))
 				return true;
+			if(!sender.hasPermission("randomtp.world"))
+			{
+				sender.sendMessage(ChatColor.DARK_RED+"You do not have permission to use this command!");
+				return true;
+			}
 			if(args.length != 1)
 				return false;
 			World world = Bukkit.getWorld(args[0]);
